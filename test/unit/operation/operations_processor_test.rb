@@ -63,7 +63,6 @@ class OperationsProcessorTest < MiniTest::Unit::TestCase
     planetoid = PlanetType.find(2)
     assert_equal(saturn.planet_type_id, planetoid.id)
 
-
     operations = [
       JSONAPI::ReplaceHasOneAssociationOperation.new(PlanetResource, saturn.id, :planet_type, gas_giant.id)
     ]
@@ -79,6 +78,18 @@ class OperationsProcessorTest < MiniTest::Unit::TestCase
 
     saturn.reload
     assert_equal(saturn.planet_type_id, gas_giant.id)
+
+    # Reset
+    operations = [
+      JSONAPI::ReplaceHasOneAssociationOperation.new(PlanetResource, saturn.id, :planet_type, 5)
+    ]
+
+    request = JSONAPI::Request.new
+    request.operations = operations
+
+    results = op.process(request)
+    saturn.reload
+    assert_equal(saturn.planet_type_id, 5)
   end
 
   def test_create_has_many_association
@@ -112,6 +123,14 @@ class OperationsProcessorTest < MiniTest::Unit::TestCase
     assert_equal(betax.planet_type_id, gas_giant.id)
     assert_equal(betay.planet_type_id, gas_giant.id)
     assert_equal(betaz.planet_type_id, gas_giant.id)
+
+    #   Reset
+    betax.planet_type_id = unknown.id
+    betay.planet_type_id = unknown.id
+    betaz.planet_type_id = unknown.id
+    betax.save!
+    betay.save!
+    betaz.save!
   end
 
   def test_replace_has_many_association
@@ -145,6 +164,14 @@ class OperationsProcessorTest < MiniTest::Unit::TestCase
     assert_equal(betax.planet_type_id, gas_giant.id)
     assert_equal(betay.planet_type_id, gas_giant.id)
     assert_equal(betaz.planet_type_id, gas_giant.id)
+
+    #   Reset
+    betax.planet_type_id = unknown.id
+    betay.planet_type_id = unknown.id
+    betaz.planet_type_id = unknown.id
+    betax.save!
+    betay.save!
+    betaz.save!
   end
 
   def test_replace_attributes

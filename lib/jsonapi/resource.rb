@@ -108,6 +108,10 @@ module JSONAPI
       self.class.fields
     end
 
+    def self_href(base_path = '')
+      "#{base_path}/#{self.class.module_path}#{self.class._type.to_s}/#{id}"
+    end
+
     class << self
       def inherited(base)
         base._attributes = (_attributes || {}).dup
@@ -116,6 +120,8 @@ module JSONAPI
 
         type = base.name.demodulize.sub(/Resource$/, '').underscore
         base._type = type.pluralize.to_sym
+
+        attribute :id, format: :id
 
         check_reserved_resource_name(base._type, base.name)
 
@@ -153,6 +159,7 @@ module JSONAPI
       def attribute(attr, options = {})
         check_reserved_attribute_name(attr)
 
+        @_attributes ||= {}
         @_attributes[attr] = options
         define_method attr do
           @model.send(attr)

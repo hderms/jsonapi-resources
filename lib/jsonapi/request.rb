@@ -182,21 +182,78 @@ module JSONAPI
     end
 
     def parse_add_operation(params)
-      object_params_raw = params.require(format_key(@resource_klass._type))
+      object_params_raw = params.require(:data)
 
       if object_params_raw.is_a?(Array)
         object_params_raw.each do |p|
           @operations.push JSONAPI::CreateResourceOperation.new(@resource_klass,
-                                                                parse_params(p, @resource_klass.createable_fields(@context)))
+                                                                parse_params(verify_and_remove_type(p),
+                                                                             @resource_klass.createable_fields(@context)))
         end
       else
         @operations.push JSONAPI::CreateResourceOperation.new(@resource_klass,
-                                                              parse_params(object_params_raw, @resource_klass.createable_fields(@context)))
+                                                              parse_params(verify_and_remove_type(object_params_raw),
+                                                                           @resource_klass.createable_fields(@context)))
       end
     rescue ActionController::ParameterMissing => e
       @errors.concat(JSONAPI::Exceptions::ParameterMissing.new(e.param).errors)
     rescue JSONAPI::Exceptions::Error => e
       @errors.concat(e.errors)
+    end
+
+    def verify_and_remove_type(params)
+      #remove type and verify it matches the resource
+      if params[:type] == @resource_klass._type.to_s
+        params.delete(:type)
+      else
+        if params[:type].nil?
+          raise JSONAPI::Exceptions::ParameterMissing.new(:type)
+        else
+          raise JSONAPI::Exceptions::InvalidResource.new(params[:type])
+        end
+      end
+      params
+    end
+
+    def parse_has_one_links_object(raw)
+      if raw.nil?
+        return {
+          type: nil,
+          id: nil
+        }
+      end
+
+      if !raw.is_a?(Hash) || raw.length != 2 || !(raw.has_key?('type') && raw.has_key?('id'))
+        raise JSONAPI::Exceptions::InvalidLinksObject.new(raw)
+      end
+
+      {
+        type: raw['type'],
+        id: raw['id']
+      }
+    end
+
+    def parse_has_many_links_object(raw)
+      if raw.nil?
+        raise JSONAPI::Exceptions::InvalidLinksObject.new(raw)
+      end
+
+      links_object = {}
+      if raw.is_a?(Hash)
+        if raw.length != 2 || !(raw.has_key?('type') && raw.has_key?('ids')) || !(raw[:ids].is_a?(Array))
+          raise JSONAPI::Exceptions::InvalidLinksObject.new(raw)
+        end
+        links_object[raw['type']] = raw['ids']
+      elsif raw.is_a?(Array)
+        raw.each do |link|
+          link_object = parse_has_one_links_object(link)
+          links_object[link_object[:type]] ||= []
+          links_object[link_object[:type]].push(link_object[:id])
+        end
+      else
+        raise JSONAPI::Exceptions::InvalidLinksObject.new(raw)
+      end
+      links_object
     end
 
     def parse_params(params, allowed_fields)
@@ -207,6 +264,7 @@ module JSONAPI
         end
         params.delete(:links)
       end
+
       verify_permitted_params(params, allowed_fields)
 
       checked_attributes = {}
@@ -219,15 +277,39 @@ module JSONAPI
         association = @resource_klass._association(param)
 
         if association.is_a?(JSONAPI::Association::HasOne)
-          checked_has_one_associations[param] = @resource_klass.resource_for(@resource_klass.module_path + association.type.to_s).verify_key(value, @context)
-        elsif association.is_a?(JSONAPI::Association::HasMany)
-          keys = []
-          if value.is_a?(Array)
-            keys = @resource_klass.resource_for(@resource_klass.module_path + association.type.to_s).verify_keys(value, @context)
-          else
-            keys.push(@resource_klass.resource_for(@resource_klass.module_path + association.type.to_s).verify_key(value, @context))
+          links_object = parse_has_one_links_object(value)
+          # Since we do not yet support polymorphic associations we will raise an error if the type does not match the
+          # association's type.
+          # ToDo: Support Polymorphic associations
+          if links_object[:type] && (links_object[:type] != association.type.to_s)
+            raise JSONAPI::Exceptions::TypeMismatch.new(links_object[:type])
           end
-          checked_has_many_associations[param] = keys
+
+          unless links_object[:id].nil?
+            association_resource = @resource_klass.resource_for(@resource_klass.module_path + links_object[:type])
+            checked_has_one_associations[param] = association_resource.verify_key(links_object[:id], @context)
+          else
+            checked_has_one_associations[param] = nil
+          end
+        elsif association.is_a?(JSONAPI::Association::HasMany)
+          links_object = parse_has_many_links_object(value)
+
+          # Since we do not yet support polymorphic associations we will raise an error if the type does not match the
+          # association's type.
+          # ToDo: Support Polymorphic associations
+
+          if links_object.length == 0
+            checked_has_many_associations[param] = []
+          else
+            if links_object.length > 1 || !links_object.has_key?(association.type.to_s)
+              raise JSONAPI::Exceptions::TypeMismatch.new(links_object[:type])
+            end
+
+            links_object.each_pair do |type, keys|
+              association_resource = @resource_klass.resource_for(@resource_klass.module_path + type)
+              checked_has_many_associations[param] = association_resource.verify_keys(keys, @context)
+            end
+          end
         else
           checked_attributes[param] = unformat_value(param, value)
         end
@@ -331,7 +413,7 @@ module JSONAPI
     end
 
     def parse_replace_operation(params)
-      object_params_raw = params.require(format_key(@resource_klass._type))
+      object_params_raw = params.require(:data)
 
       keys = params[@resource_klass._primary_key]
       if object_params_raw.is_a?(Array)
@@ -349,7 +431,8 @@ module JSONAPI
           end
           @operations.push JSONAPI::ReplaceFieldsOperation.new(@resource_klass,
                                                                object_params[@resource_klass._primary_key],
-                                                               parse_params(object_params, @resource_klass.updateable_fields(@context)))
+                                                               parse_params(verify_and_remove_type(object_params),
+                                                                            @resource_klass.updateable_fields(@context)))
         end
       else
         if !object_params_raw[@resource_klass._primary_key].nil? && keys != object_params_raw[@resource_klass._primary_key]
@@ -358,7 +441,8 @@ module JSONAPI
 
         @operations.push JSONAPI::ReplaceFieldsOperation.new(@resource_klass,
                                                                params[@resource_klass._primary_key],
-                                                               parse_params(object_params_raw, @resource_klass.updateable_fields(@context)))
+                                                               parse_params(verify_and_remove_type(object_params_raw),
+                                                                            @resource_klass.updateable_fields(@context)))
       end
 
     rescue ActionController::ParameterMissing => e
