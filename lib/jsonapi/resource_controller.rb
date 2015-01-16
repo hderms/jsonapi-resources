@@ -22,6 +22,7 @@ module JSONAPI
           include: @request.include,
           fields: @request.fields,
           attribute_formatters: attribute_formatters,
+          base_url: base_url,
           key_formatter: key_formatter)
     rescue => e
       handle_exceptions(e)
@@ -40,6 +41,7 @@ module JSONAPI
           resources,
           include: @request.include,
           fields: @request.fields,
+          base_url: base_url,
           attribute_formatters: attribute_formatters,
           key_formatter: key_formatter)
     rescue => e
@@ -102,6 +104,10 @@ module JSONAPI
       end
     end
     # :nocov:
+
+    def base_url
+      @base_url ||= request.protocol + request.host_with_port
+    end
 
     def resource_klass_name
       @resource_klass_name ||= "#{self.class.name.sub(/Controller$/, '').singularize}Resource"
@@ -172,6 +178,7 @@ module JSONAPI
                    resources.length > 1 ? resources : resources[0],
                    include: @request.include,
                    fields: @request.fields,
+                   base_url: base_url,
                    attribute_formatters: attribute_formatters,
                    key_formatter: key_formatter)
         else

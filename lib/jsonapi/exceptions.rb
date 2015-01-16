@@ -100,6 +100,34 @@ module JSONAPI
       end
     end
 
+    class InvalidLinksObject < Error
+      attr_accessor :value
+      def initialize(value)
+        @value = value
+      end
+
+      def errors
+        [JSONAPI::Error.new(code: JSONAPI::INVALID_LINKS_OBJECT,
+                            status: :bad_request,
+                            title: 'Invalid Links Object',
+                            detail: "#{value} is not a valid Links Object.")]
+      end
+    end
+
+    class TypeMismatch < Error
+      attr_accessor :type
+      def initialize(type)
+        @type = type
+      end
+
+      def errors
+        [JSONAPI::Error.new(code: JSONAPI::TYPE_MISMATCH,
+                            status: :bad_request,
+                            title: 'Type Mismatch',
+                            detail: "#{type} is not a valid type for this operation.")]
+      end
+    end
+
     class InvalidField < Error
       attr_accessor :field, :type
       def initialize(type, field)

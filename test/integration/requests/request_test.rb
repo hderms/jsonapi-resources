@@ -12,30 +12,30 @@ class RequestTest < ActionDispatch::IntegrationTest
     JSONAPI.configuration.json_key_format = :underscored_key
     get '/iso_currencies'
     assert_equal 200, status
-    assert_equal 3, json_response['iso_currencies'].size
+    assert_equal 3, json_response['data'].size
   end
 
   def test_get_underscored_key_filtered
     JSONAPI.configuration.json_key_format = :underscored_key
     get '/iso_currencies?country_name=Canada'
     assert_equal 200, status
-    assert_equal 1, json_response['iso_currencies'].size
-    assert_equal 'Canada', json_response['iso_currencies'][0]['country_name']
+    assert_equal 1, json_response['data'].size
+    assert_equal 'Canada', json_response['data'][0]['country_name']
   end
 
   def test_get_camelized_key_filtered
     JSONAPI.configuration.json_key_format = :camelized_key
     get '/iso_currencies?countryName=Canada'
     assert_equal 200, status
-    assert_equal 1, json_response['isoCurrencies'].size
-    assert_equal 'Canada', json_response['isoCurrencies'][0]['countryName']
+    assert_equal 1, json_response['data'].size
+    assert_equal 'Canada', json_response['data'][0]['countryName']
   end
 
   def test_get_camelized_route_and_key_filtered
     get '/api/v4/isoCurrencies?countryName=Canada'
     assert_equal 200, status
-    assert_equal 1, json_response['isoCurrencies'].size
-    assert_equal 'Canada', json_response['isoCurrencies'][0]['countryName']
+    assert_equal 1, json_response['data'].size
+    assert_equal 'Canada', json_response['data'][0]['countryName']
   end
 
   def test_get_camelized_route_and_links
@@ -48,11 +48,12 @@ class RequestTest < ActionDispatch::IntegrationTest
   def test_put_single
     put '/posts/3',
         {
-          'posts' => {
+          'data' => {
+            'type' => 'posts',
             'id' => '3',
             'title' => 'A great new Post',
             'links' => {
-              'tags' => [3, 4]
+              'tags' => {type: 'tags', ids: [3, 4]}
             }
           }
         }

@@ -362,7 +362,7 @@ class PersonResource < JSONAPI::Resource
 end
 
 class AuthorResource < JSONAPI::Resource
-  attributes :id, :name, :email
+  attributes :name, :email
   model_name 'Person'
   has_many :posts
 
@@ -385,14 +385,14 @@ class AuthorResource < JSONAPI::Resource
 end
 
 class CommentResource < JSONAPI::Resource
-  attributes :id, :body
+  attributes :body
   has_one :post
   has_one :author, class_name: 'Person'
   has_many :tags
 end
 
 class TagResource < JSONAPI::Resource
-  attributes :id, :name
+  attributes :name
 
   has_many :posts
   # Not including the planets association so they don't get output
@@ -404,7 +404,6 @@ class SectionResource < JSONAPI::Resource
 end
 
 class PostResource < JSONAPI::Resource
-  attribute :id
   attribute :title
   attribute :body
   attribute :subject
@@ -490,13 +489,13 @@ end
 
 class IsoCurrencyResource < JSONAPI::Resource
   primary_key :code
-  attributes :id, :name, :country_name, :minor_unit
+  attributes :name, :country_name, :minor_unit
 
   filter :country_name
 end
 
 class ExpenseEntryResource < JSONAPI::Resource
-  attributes :id, :cost
+  attributes :cost
   attribute :transaction_date, format: :date
 
   has_one :iso_currency, foreign_key: 'currency_code'
@@ -528,7 +527,6 @@ class BreedResource < JSONAPI::Resource
 end
 
 class PlanetResource < JSONAPI::Resource
-  attribute :id
   attribute :name
   attribute :description
 
@@ -539,18 +537,17 @@ class PlanetResource < JSONAPI::Resource
 end
 
 class PropertyResource < JSONAPI::Resource
-  attributes :id, :name
+  attributes :name
 
   has_many :planets
 end
 
 class PlanetTypeResource < JSONAPI::Resource
-  attributes :id, :name
+  attributes :name
   has_many :planets
 end
 
 class MoonResource < JSONAPI::Resource
-  attribute :id
   attribute :name
   attribute :description
 
@@ -558,7 +555,6 @@ class MoonResource < JSONAPI::Resource
 end
 
 class PreferencesResource < JSONAPI::Resource
-  attribute :id
   attribute :advanced_mode
 
   has_one :author, foreign_key: :person_id
@@ -570,7 +566,6 @@ class PreferencesResource < JSONAPI::Resource
 end
 
 class FactResource < JSONAPI::Resource
-  attribute :id
   attribute :spouse_name
   attribute :bio
   attribute :quality_rating
@@ -585,7 +580,7 @@ end
 module Api
   module V1
     class WriterResource < JSONAPI::Resource
-      attributes :id, :name, :email
+      attributes :name, :email
       model_name 'Person'
       has_many :posts
 
@@ -597,7 +592,6 @@ module Api
 
     class PostResource < JSONAPI::Resource
       # V1 no longer supports tags and now calls author 'writer'
-      attribute :id
       attribute :title
       attribute :body
       attribute :subject
