@@ -20,7 +20,7 @@ module JSONAPI
 
       self.allowed_request_params = [:include, :fields, :format, :controller, :action, :sort, :page]
 
-      # :none, :offset, :cursor, :paged
+      # :none, :offset, :paged, or a custom paginator name
       self.default_paginator = :none
 
       self.default_page_size = 10
