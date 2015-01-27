@@ -334,9 +334,40 @@ end
 
 Pagination is performed using a `paginator`, which is a class responsible for parsing the `page` request parameters and applying the pagination logic to the results.
 
-##### Default Paginator
+##### Paginators
 
-The default paginator is set using `JSONAPI.configure`, for example:
+`JSONAPI::Resource` supports several pagination methods by default, and allows you to implement a custom system if the defaults do not meet your needs.
+
+###### Paged Paginator
+
+The `paged` `paginator` returns results based on pages of a fixed size. Valid `page` parameters are `number` and `size`. If `number` is omitted the first page is returned. If `size` is omitted the `default_page_size` from the configuration settings is used.
+
+###### Offset Paginator
+
+The `offset` `paginator` returns results based on an offset from the beginning of the resultset. Valid `page` parameters are `offset` and `limit`. If `offset` is omitted a value of 0 will be used. If `limit` is omitted the `default_page_size` from the configuration settings is used.
+
+###### Custom Paginators
+
+Custom `paginators` can be used. These should derive from `Paginator`. The `apply` method takes a `relation` and is expected to return a `relation`. The `initialize` method receives the parameters from the `page` request parameters. It is up to the paginator author to parse and validate these parameters.
+
+For example, here is a very simple single record at a time paginator:
+
+```ruby
+class SingleRecordPaginator < JSONAPI::Paginator
+  def initialize(params)
+    # param parsing and validation here
+    @page = params.to_i
+  end
+
+  def apply(relation)
+    relation.offset(@page).limit(1)
+  end
+end
+```
+
+##### Paginator Configuration
+
+The default paginator, which will be used for all resources, is set using `JSONAPI.configure`. For example:
 
 ```ruby
 JSONAPI.configure do |config|
@@ -348,51 +379,20 @@ JSONAPI.configure do |config|
 end
 ```
 
-The default is `:none`.
+If no `default_paginator` is configured, pagination will be disabled by default.
 
-##### Paginator in the Resource
-
-The `paginator` can be set in the `resource`, which will override the `default_paginator`. This is done using the `paginator` method:
+Paginators can also be set at the resource-level, which will override the default setting. This is done using the `paginator` method:
 
 ```ruby
-    class BookResource < JSONAPI::Resource
-      attribute :title
-      attribute :isbn
+class BookResource < JSONAPI::Resource
+  attribute :title
+  attribute :isbn
 
-      paginator :offset
-    end
+  paginator :offset
+end
 ```
 
-##### Paginators
-
-`JSONAPI::Resource` supports several pagination methods by default, and allows you to implement a custom system if the defaults do not meet your needs.
-
-##### Paged Paginator
-
-The `paged` `paginator` returns results based on pages of a fixed size. Valid `page` parameters are `number` and `size`. If `number` is omitted the first page is returned. If `size` is omitted the `default_page_size` from the configuration settings is used.
-
-##### Offset Paginator
-
-The `offset` `paginator` returns results based on an offset from the beginning of the resultset. Valid `page` parameters are `offset` and `limit`. If `offset` is omitted a value of 0 will be used. If `limit` is omitted the `default_page_size` from the configuration settings is used.
-
-##### Custom Paginators
-
-Custom `paginators` can be used. These should derive from `Paginator`. The `apply` method takes a `relation` and is expected to return a `relation`. The `initialize` method receives the parameters from the `page` request parameters. It is up to the paginator author to parse and validate these parameters.
-
- For example, here is a very simple single record at a time paginator:
-
- ```ruby
-class SingleRecordPaginator < JSONAPI::Paginator
-  def initialize(params)
-    # param parsing and validation here
-    @page = params.to_i
-  end
-
-  def apply(relation)
-    relation.offset(@page).limit(1)
-  end
-end
- ```
+To disable pagination in a resource, specify `:none` for `paginator`.
 
 #### Callbacks
 
