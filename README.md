@@ -330,6 +330,70 @@ class AuthorResource < JSONAPI::Resource
 end
 ```
 
+#### Pagination
+
+Pagination is performed using a `paginator`, which is a class responsible for parsing the `page` request parameters and applying the pagination logic to the results.
+
+##### Default Paginator
+
+The default paginator is set using `JSONAPI.configure`, for example:
+
+```ruby
+JSONAPI.configure do |config|
+  # built in paginators are :none, :offset, :cursor, :paged
+  self.default_paginator = :offset
+
+  self.default_page_size = 10
+  self.maximum_page_size = 20
+end
+```
+
+The default is `:none`.
+
+##### Paginator in the Resource
+
+The `paginator` can be set in the `resource`, which will override the `default_paginator`. This is done using the `paginator` method:
+
+```ruby
+    class BookResource < JSONAPI::Resource
+      attribute :title
+      attribute :isbn
+
+      paginator :offset
+    end
+```
+
+##### Paginators
+
+`JSONAPI::Resource` supports several pagination methods by default, and allows you to implement a custom system if the defaults do not meet your needs.
+
+##### Paged Paginator
+
+The `paged` `paginator` returns results based on pages of a fixed size. Valid `page` parameters are `number` and `size`. If `number` is omitted the first page is returned. If `size` is omitted the `default_page_size` from the configuration settings is used.
+
+##### Offset Paginator
+
+The `offset` `paginator` returns results based on an offset from the beginning of the resultset. Valid `page` parameters are `offset` and `limit`. If `offset` is omitted a value of 0 will be used. If `limit` is omitted the `default_page_size` from the configuration settings is used.
+
+##### Custom Paginators
+
+Custom `paginators` can be used. These should derive from `Paginator`. The `apply` method takes a `relation` and is expected to return a `relation`. The `initialize` method receives the parameters from the `page` request parameters. It is up to the paginator author to parse and validate these parameters.
+
+ For example, here is a very simple single record at a time paginator:
+
+ ```ruby
+class SingleRecordPaginator < Paginator
+  def initialize(params)
+    # param parsing and validation here
+    @page = params.to_i
+  end
+
+  def apply(relation)
+    relation.offset(@page).limit(1)
+  end
+end
+ ```
+
 #### Callbacks
 
 `ActiveSupport::Callbacks` is used to provide callback functionality, so the behavior is very similar to what you may be used to from `ActiveRecord`.
@@ -517,7 +581,10 @@ module JSONAPI
   INVALID_INCLUDE = 112
   RELATION_EXISTS = 113
   INVALID_SORT_PARAM = 114
-
+  INVALID_LINKS_OBJECT = 115
+  TYPE_MISMATCH = 116
+  INVALID_PAGE_OBJECT = 117
+  INVALID_PAGE_VALUE = 118
   RECORD_NOT_FOUND = 404
   LOCKED = 423
 end

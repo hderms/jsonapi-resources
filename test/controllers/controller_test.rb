@@ -1596,11 +1596,11 @@ end
 
 class Api::V2::BooksControllerTest < ActionController::TestCase
   def after_teardown
-    JSONAPI.configuration.paginator = :none
+    Api::V2::BookResource.paginator :offset
   end
 
   def test_books_offset_pagination_no_params
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
 
     get :index
     assert_response :success
@@ -1609,7 +1609,7 @@ class Api::V2::BooksControllerTest < ActionController::TestCase
   end
 
   def test_books_offset_pagination
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
 
     get :index, {page: {offset: 50, limit: 12}}
     assert_response :success
@@ -1618,7 +1618,7 @@ class Api::V2::BooksControllerTest < ActionController::TestCase
   end
 
   def test_books_offset_pagination_bad_page_param
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
 
     get :index, {page: {offset_bad: 50, limit: 12}}
     assert_response :bad_request
@@ -1626,7 +1626,7 @@ class Api::V2::BooksControllerTest < ActionController::TestCase
   end
 
   def test_books_offset_pagination_bad_param_value_limit_to_large
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
 
     get :index, {page: {offset: 50, limit: 1000}}
     assert_response :bad_request
@@ -1634,7 +1634,7 @@ class Api::V2::BooksControllerTest < ActionController::TestCase
   end
 
   def test_books_offset_pagination_bad_param_value_limit_too_small
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
 
     get :index, {page: {offset: 50, limit: -1}}
     assert_response :bad_request
@@ -1642,7 +1642,7 @@ class Api::V2::BooksControllerTest < ActionController::TestCase
   end
 
   def test_books_offset_pagination_invalid_page_format
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
 
     get :index, {page: 50}
     assert_response :bad_request
@@ -1650,7 +1650,7 @@ class Api::V2::BooksControllerTest < ActionController::TestCase
   end
 
   def test_books_paged_pagination_no_params
-    JSONAPI.configuration.paginator = :paged
+    Api::V2::BookResource.paginator :paged
 
     get :index
     assert_response :success
@@ -1659,49 +1659,49 @@ class Api::V2::BooksControllerTest < ActionController::TestCase
   end
 
   def test_books_paged_pagination_no_page
-    JSONAPI.configuration.paginator = :paged
+    Api::V2::BookResource.paginator :paged
 
-    get :index, {page: {limit: 12}}
+    get :index, {page: {size: 12}}
     assert_response :success
     assert_equal 12, json_response['data'].size
     assert_equal 'Book 0', json_response['data'][0]['title']
   end
 
   def test_books_paged_pagination
-    JSONAPI.configuration.paginator = :paged
+    Api::V2::BookResource.paginator :paged
 
-    get :index, {page: {page: 2, limit: 12}}
+    get :index, {page: {number: 3, size: 12}}
     assert_response :success
     assert_equal 12, json_response['data'].size
     assert_equal 'Book 24', json_response['data'][0]['title']
   end
 
   def test_books_paged_pagination_bad_page_param
-    JSONAPI.configuration.paginator = :paged
+    Api::V2::BookResource.paginator :paged
 
-    get :index, {page: {page_bad: 50, limit: 12}}
+    get :index, {page: {number_bad: 50, size: 12}}
     assert_response :bad_request
-    assert_match /page_bad is not an allowed page parameter./, json_response['errors'][0]['detail']
+    assert_match /number_bad is not an allowed page parameter./, json_response['errors'][0]['detail']
   end
 
   def test_books_paged_pagination_bad_param_value_limit_to_large
-    JSONAPI.configuration.paginator = :paged
+    Api::V2::BookResource.paginator :paged
 
-    get :index, {page: {page: 50, limit: 1000}}
+    get :index, {page: {number: 50, size: 1000}}
     assert_response :bad_request
-    assert_match /Limit exceeds maximum page size of 20./, json_response['errors'][0]['detail']
+    assert_match /size exceeds maximum page size of 20./, json_response['errors'][0]['detail']
   end
 
   def test_books_paged_pagination_bad_param_value_limit_too_small
-    JSONAPI.configuration.paginator = :paged
+    Api::V2::BookResource.paginator :paged
 
-    get :index, {page: {page: 50, limit: -1}}
+    get :index, {page: {number: 50, size: -1}}
     assert_response :bad_request
-    assert_match /-1 is not a valid value for limit page parameter./, json_response['errors'][0]['detail']
+    assert_match /-1 is not a valid value for size page parameter./, json_response['errors'][0]['detail']
   end
 
-  def test_books_paged_pagination_invalid_page_format_interpret_int
-    JSONAPI.configuration.paginator = :paged
+  def test_books_paged_pagination_invalid_page_format_interpret_int_text
+    Api::V2::BookResource.paginator :paged
 
     get :index, {page: 'qwerty'}
     assert_response :success
@@ -1710,9 +1710,9 @@ class Api::V2::BooksControllerTest < ActionController::TestCase
   end
 
   def test_books_paged_pagination_invalid_page_format_interpret_int
-    JSONAPI.configuration.paginator = :paged
+    Api::V2::BookResource.paginator :paged
 
-    get :index, {page: 2}
+    get :index, {page: 3}
     assert_response :success
     assert_equal 10, json_response['data'].size
     assert_equal 'Book 20', json_response['data'][0]['title']

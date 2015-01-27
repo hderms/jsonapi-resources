@@ -335,6 +335,9 @@ module Api
 
     class IsoCurrenciesController < JSONAPI::ResourceController
     end
+
+    class BooksController < JSONAPI::ResourceController
+    end
   end
 
   module V5
@@ -658,6 +661,10 @@ module Api
     PostResource = PostResource.dup
     ExpenseEntryResource = ExpenseEntryResource.dup
     IsoCurrencyResource = IsoCurrencyResource.dup
+
+    class BookResource < Api::V2::BookResource
+      paginator :paged
+    end
   end
 end
 

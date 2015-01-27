@@ -67,29 +67,30 @@ module JSONAPI
     end
 
     def apply(relation)
-      relation.offset(@offset).limit(@limit)
+      offset = (@number - 1) * @size
+      relation.offset(offset).limit(@size)
     end
 
     private
     def parse_pagination_params(params)
       if params.nil?
-        @offset = 0
-        @limit = JSONAPI.configuration.default_page_size
+        @number = 1
+        @size = JSONAPI.configuration.default_page_size
       elsif params.is_a?(ActionController::Parameters)
-        validparams = params.permit(:page, :limit)
+        validparams = params.permit(:number, :size)
 
-        @limit = validparams[:limit] ? validparams[:limit].to_i : JSONAPI.configuration.default_page_size
-        @offset = (validparams[:page] ? validparams[:page].to_i : 0) * @limit
+        @size = validparams[:size] ? validparams[:size].to_i : JSONAPI.configuration.default_page_size
+        @number = validparams[:number] ? validparams[:number].to_i : 1
 
-        if @limit < 1
-          raise JSONAPI::Exceptions::InvalidPageValue.new(:limit, validparams[:limit])
-        elsif @limit > JSONAPI.configuration.maximum_page_size
-          raise JSONAPI::Exceptions::InvalidPageValue.new(:limit, validparams[:limit],
-                                                          "Limit exceeds maximum page size of #{JSONAPI.configuration.maximum_page_size}.")
+        if @size < 1
+          raise JSONAPI::Exceptions::InvalidPageValue.new(:size, validparams[:size])
+        elsif @size > JSONAPI.configuration.maximum_page_size
+          raise JSONAPI::Exceptions::InvalidPageValue.new(:size, validparams[:size],
+                                                          "size exceeds maximum page size of #{JSONAPI.configuration.maximum_page_size}.")
         end
       else
-        @limit = JSONAPI.configuration.default_page_size
-        @offset = params.to_i * @limit
+        @size = JSONAPI.configuration.default_page_size
+        @number = params.to_i
       end
     rescue ActionController::UnpermittedParameters => e
       raise JSONAPI::Exceptions::PageParametersNotAllowed.new(e.params)

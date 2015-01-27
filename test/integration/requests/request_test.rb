@@ -4,7 +4,7 @@ require File.expand_path('../../../fixtures/active_record', __FILE__)
 class RequestTest < ActionDispatch::IntegrationTest
 
   def after_teardown
-    JSONAPI.configuration.paginator = :none
+    Api::V2::BookResource.paginator :offset
   end
 
   def test_get
@@ -75,14 +75,14 @@ class RequestTest < ActionDispatch::IntegrationTest
   end
 
   def test_pagination_none
-    JSONAPI.configuration.paginator = :none
+    Api::V2::BookResource.paginator :none
     get '/api/v2/books'
     assert_equal 200, status
     assert_equal 1000, json_response['data'].size
   end
 
   def test_pagination_offset_style
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
     get '/api/v2/books'
     assert_equal 200, status
     assert_equal JSONAPI.configuration.default_page_size, json_response['data'].size
@@ -90,7 +90,7 @@ class RequestTest < ActionDispatch::IntegrationTest
   end
 
   def test_pagination_offset_style_offset
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
     get '/api/v2/books?page[offset]=50'
     assert_equal 200, status
     assert_equal JSONAPI.configuration.default_page_size, json_response['data'].size
@@ -98,7 +98,7 @@ class RequestTest < ActionDispatch::IntegrationTest
   end
 
   def test_pagination_offset_style_offset_limit
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
     get '/api/v2/books?page[offset]=50&page[limit]=20'
     assert_equal 200, status
     assert_equal 20, json_response['data'].size
@@ -106,7 +106,7 @@ class RequestTest < ActionDispatch::IntegrationTest
   end
 
   def test_pagination_offset_bad_param
-    JSONAPI.configuration.paginator = :offset
+    Api::V2::BookResource.paginator :offset
     get '/api/v2/books?page[irishsetter]=50&page[limit]=20'
     assert_equal 400, status
   end

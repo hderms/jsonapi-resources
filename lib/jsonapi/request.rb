@@ -17,7 +17,6 @@ module JSONAPI
       @fields = {}
       @include = []
       @filters = {}
-      @paginator_name = options.fetch(:paginator, JSONAPI.configuration.paginator)
 
       setup(params) if params
     end
@@ -58,7 +57,8 @@ module JSONAPI
     end
 
     def parse_pagination(params)
-      @paginator = Paginator.paginator_for(@paginator_name).new(params[:page]) unless @paginator_name == :none
+      paginator_name = @resource_klass._paginator
+      @paginator = Paginator.paginator_for(paginator_name).new(params[:page]) unless paginator_name == :none
     rescue JSONAPI::Exceptions::Error => e
       @errors.concat(e.errors)
     end
