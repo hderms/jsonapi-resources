@@ -105,6 +105,11 @@ ActiveRecord::Schema.define do
     t.binary   :photo, limit: 1.kilobyte
     t.boolean  :cool
   end
+
+  create_table :books, force: true do |t|
+    t.string :title
+    t.string :isbn
+  end
 end
 
 ### MODELS
@@ -200,6 +205,9 @@ class Breed
 
   def save!
   end
+end
+
+class Book < ActiveRecord::Base
 end
 
 class BreedData
@@ -307,6 +315,9 @@ module Api
     end
 
     class PreferencesController < JSONAPI::ResourceController
+    end
+
+    class BooksController < JSONAPI::ResourceController
     end
   end
 
@@ -627,6 +638,11 @@ module Api
     PreferencesResource = PreferencesResource.dup
     AuthorResource = AuthorResource.dup
     PostResource = PostResource.dup
+
+    class BookResource < JSONAPI::Resource
+      attribute :title
+      attribute :isbn
+    end
   end
 end
 
@@ -835,3 +851,7 @@ fact = Fact.create(spouse_name: 'Jane Author',
                    photo: "abc",
                    cool: false
 )
+
+for pos in 0..999
+  Book.create(title: "Book #{pos}", isbn: "12345-#{pos}-67890")
+end

@@ -1,11 +1,13 @@
 require 'jsonapi/resource_for'
 require 'jsonapi/operation'
+require 'jsonapi/paginator'
 
 module JSONAPI
   class Request
     include ResourceFor
 
-    attr_accessor :fields, :include, :filters, :sort_params, :errors, :operations, :resource_klass, :context
+    attr_accessor :fields, :include, :filters, :sort_params, :errors, :operations, :resource_klass, :context,
+                  :paginator
 
     def initialize(params = nil, options = {})
       @context = options.fetch(:context, nil)
@@ -15,6 +17,7 @@ module JSONAPI
       @fields = {}
       @include = []
       @filters = {}
+      @paginator_name = options.fetch(:paginator, JSONAPI.configuration.paginator)
 
       setup(params) if params
     end
@@ -29,6 +32,7 @@ module JSONAPI
             parse_include(params)
             parse_filters(params)
             parse_sort_params(params)
+            parse_pagination(params)
           when 'show_associations'
           when 'show'
             parse_fields(params)
@@ -51,6 +55,12 @@ module JSONAPI
             parse_remove_association_operation(params)
         end
       end
+    end
+
+    def parse_pagination(params)
+      @paginator = Paginator.paginator_for(@paginator_name).new(params[:page]) unless @paginator_name == :none
+    rescue JSONAPI::Exceptions::Error => e
+      @errors.concat(e.errors)
     end
 
     def parse_fields(params)

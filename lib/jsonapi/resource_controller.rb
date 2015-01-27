@@ -18,7 +18,7 @@ module JSONAPI
     def index
       render json: JSONAPI::ResourceSerializer.new(resource_klass).serialize_to_hash(
           resource_klass.find(resource_klass.verify_filters(@request.filters, context),
-            context: context, sort_params: @request.sort_params),
+            context: context, sort_params: @request.sort_params, paginator: @request.paginator),
           include: @request.include,
           fields: @request.fields,
           attribute_formatters: attribute_formatters,

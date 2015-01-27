@@ -271,5 +271,47 @@ module JSONAPI
       end
     end
 
+    class InvalidPageObject < Error
+      def errors
+        [JSONAPI::Error.new(code: JSONAPI::INVALID_PAGE_OBJECT,
+                            status: :bad_request,
+                            title: 'Invalid Page Object',
+                            detail: 'Invalid Page Object.')]
+      end
+    end
+
+
+    class PageParametersNotAllowed < Error
+      attr_accessor :params
+      def initialize(params)
+        @params = params
+      end
+
+      def errors
+        params.collect { |param|
+          JSONAPI::Error.new(code: JSONAPI::PARAM_NOT_ALLOWED,
+                             status: :bad_request,
+                             title: 'Page parameter not allowed',
+                             detail: "#{param} is not an allowed page parameter.")
+        }
+
+      end
+    end
+
+    class InvalidPageValue < Error
+      attr_accessor :page, :value
+      def initialize(page, value, msg = nil)
+        @page = page
+        @value = value
+        @msg = msg.nil? ? "#{value} is not a valid value for #{page} page parameter." : msg
+      end
+
+      def errors
+        [JSONAPI::Error.new(code: JSONAPI::INVALID_PAGE_VALUE,
+                            status: :bad_request,
+                            title: 'Invalid page value',
+                            detail: @msg)]
+      end
+    end
   end
 end

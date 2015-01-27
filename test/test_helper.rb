@@ -79,6 +79,7 @@ TestApp.routes.draw do
       jsonapi_resources :authors
       jsonapi_resources :posts
       jsonapi_resource :preferences
+      jsonapi_resources :books
     end
 
     namespace :v3 do
