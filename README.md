@@ -382,7 +382,7 @@ Custom `paginators` can be used. These should derive from `Paginator`. The `appl
  For example, here is a very simple single record at a time paginator:
 
  ```ruby
-class SingleRecordPaginator < Paginator
+class SingleRecordPaginator < JSONAPI::Paginator
   def initialize(params)
     # param parsing and validation here
     @page = params.to_i
