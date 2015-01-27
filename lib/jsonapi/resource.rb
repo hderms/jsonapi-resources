@@ -350,16 +350,15 @@ module JSONAPI
         resources = []
         order_options = construct_order_options(sort_params)
 
-        paginator = options[:paginator]
+        records = records.order(order_options).includes(includes)
 
-        if paginator.nil?
-          records.order(order_options).includes(includes).each do |model|
-            resources.push self.new(model, context)
-          end
-        else
-          options[:paginator].apply(records.order(order_options).includes(includes)).each do |model|
-            resources.push self.new(model, context)
-          end
+        paginator = options[:paginator]
+        if paginator
+          records = paginator.apply(records)
+        end
+
+        records.each do |model|
+          resources.push self.new(model, context)
         end
 
         return resources
